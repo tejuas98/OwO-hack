@@ -152,7 +152,9 @@ Upon match detection, the bot immediately halts all tasks, initializes a continu
 
 ## 3. Graphical Interface & User Dashboard
 
-The Tkinter dashboard provides real-time oversight of connection state, per-loop script editing, and channel routing.
+The suite features a custom dark desktop dashboard engineered to avoid default OS Aqua rendering quirks and provide a unified Discord-inspired visual hierarchy.
+
+![Redesigned Dashboard](assets/dashboard_redesign_preview.png)
 
 ### 3.1 Main Loop Configuration
 Dedicated interface for primary battle and farming commands (`ob`).
