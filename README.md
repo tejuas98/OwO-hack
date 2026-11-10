@@ -98,7 +98,28 @@ $$\Delta t_{\text{sleep}} = \text{round}(\text{random.uniform}(a, b), 1)$$
 
 Because each loop evaluates this function independently, the delays generated for different loops continuously drift relative to each other, preventing synchronized packet bursts.
 
-### 2.3 Anti-Obfuscation Captcha Defense
+### 2.3 Global Anti-Collision Lock and Command Spacing
+Sending battle (`ob`) and hunt (`wh`) commands at the exact same second from the same account triggers rate-limit flags and represents an obvious robotic signature.
+
+To prevent simultaneous transmissions across concurrent tasks, the engine enforces a centralized synchronization barrier via `asyncio.Lock`:
+- Whenever any loop is ready to transmit a command, it requests exclusive acquisition of `self.send_lock`.
+- It measures the elapsed time since the most recent command was transmitted by any loop:
+
+  $$\Delta t_{\text{elapsed}} = t_{\text{now}} - t_{\text{last\_sent}}$$
+
+- If $\Delta t_{\text{elapsed}}$ is less than a dynamically sampled anti-collision threshold:
+
+  $$\Delta t_{\text{gap}} \sim \mathcal{U}(2.0, 4.0)$$
+
+  the coroutine delays its transmission by the remaining difference:
+
+  $$\Delta t_{\text{extra}} = \Delta t_{\text{gap}} - \Delta t_{\text{elapsed}}$$
+
+- Only after this 2 to 4 second human gap has passed does it transmit the message, record the new timestamp, and release the lock.
+
+This guarantees that battle and hunt commands never fire simultaneously or within 2 to 4 seconds of each other.
+
+### 2.4 Anti-Obfuscation Captcha Defense
 Automated detection systems often disguise verification challenges using invisible zero-width unicode characters (e.g., `U+200B`, `U+200C`, `U+FEFF`), varied casing, and non-alphanumeric separators.
 
 The verification interception pipeline processes incoming messages through an aggressive regex normalizer:
@@ -161,6 +182,7 @@ wait 16-20
 
 **Secondary Loop (`wh`):**
 ```text
+wait 3
 wh
 wait 16-20
 wh
@@ -171,6 +193,7 @@ wait 16-20
 
 **Third Loop (`OwO`):**
 ```text
+wait 5
 OwO
 wait 10-15
 OwO
@@ -233,3 +256,4 @@ Click **Start Bot** to begin automated execution.
 1. **Authorization Token Protection:** Never share, commit, or push `data/owo_config.json` containing live Discord tokens. The `.gitignore` file is pre-configured to exclude this file.
 2. **Interval Pacing:** Do not reduce intervals below 15 seconds for battle/hunt commands to maintain compliance with server-side rate limits.
 3. **Audible Alert Monitoring:** Ensure system volume is audible so you can complete manual verification prompts immediately if the alarm triggers.
+

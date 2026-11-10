@@ -97,6 +97,8 @@ class OwOBot(commands.Bot):
         self.spam_task_2 = None
         self.spam_task_3 = None
         self.owo_bot_id = 408785106942164992  # Official OwO bot ID
+        self.last_sent_time = 0.0
+        self.send_lock = asyncio.Lock()
 
     async def on_ready(self):
         print(f"[INFO] Logged in as {self.user.name} ({self.user.id})")
@@ -145,9 +147,22 @@ class OwOBot(commands.Bot):
                         sys.stdout.flush()
                         await asyncio.sleep(delay)
                     elif action["type"] == "command":
-                        await channel.send(action["value"])
-                        print(f"[{loop_name}] Sent: {action['value']}")
-                        sys.stdout.flush()
+                        async with self.send_lock:
+                            import time
+                            import random
+                            now = time.time()
+                            elapsed = now - self.last_sent_time
+                            required_gap = round(random.uniform(2.0, 4.0), 1)
+                            if self.last_sent_time > 0 and elapsed < required_gap:
+                                extra_wait = round(required_gap - elapsed, 1)
+                                print(f"[{loop_name}] Spacing command ({extra_wait}s gap to prevent overlap)...")
+                                sys.stdout.flush()
+                                await asyncio.sleep(extra_wait)
+                            
+                            await channel.send(action["value"])
+                            self.last_sent_time = time.time()
+                            print(f"[{loop_name}] Sent: {action['value']}")
+                            sys.stdout.flush()
                 except Exception as e:
                     print(f"[ERROR] [{loop_name}] Failed to execute '{action.get('value')}': {e}")
                     sys.stdout.flush()
@@ -221,3 +236,4 @@ class OwOBot(commands.Bot):
 if __name__ == "__main__":
     bot = OwOBot()
     bot.run(TOKEN)
+

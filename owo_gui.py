@@ -54,8 +54,8 @@ class OwOBotGUI:
         self.toggle_token_btn.pack(side=tk.RIGHT)
         
         initial_script_1 = "ob\nwait 16-20\nob\nwait 16-20\nob\nwait 16-20\nob\nwait 16-20"
-        initial_script_2 = "wh\nwait 16-20\nwh\nwait 16-20\nwh\nwait 16-20\nwh\nwait 16-20"
-        initial_script_3 = "OwO\nwait 10-15\nOwO\nwait 10-15\nOwO\nwait 10-15"
+        initial_script_2 = "wait 3\nwh\nwait 16-20\nwh\nwait 16-20\nwh\nwait 16-20"
+        initial_script_3 = "wait 5\nOwO\nwait 10-15\nOwO\nwait 10-15\nOwO\nwait 10-15"
         
         os.makedirs("data", exist_ok=True)
         if not os.path.exists(CONFIG_FILE) and os.path.exists(EXAMPLE_CONFIG):
@@ -249,3 +249,4 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = OwOBotGUI(root)
     root.mainloop()
+
