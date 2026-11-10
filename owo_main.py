@@ -27,6 +27,7 @@ TOKEN = config.get("user_token", "")
 CHANNEL_ID_1 = config.get("owo_channel", "")
 CHANNEL_ID_2 = config.get("owo_channel_2", "") or CHANNEL_ID_1
 CHANNEL_ID_3 = config.get("owo_channel_3", "") or CHANNEL_ID_1
+SIMULATE_TYPING = bool(config.get("simulate_typing", True))
 
 SCRIPT_CONTENT_1 = config.get("owo_script", "")
 SCRIPT_CONTENT_2 = config.get("owo_script_2", "")
@@ -159,6 +160,14 @@ class OwOBot(commands.Bot):
                                 sys.stdout.flush()
                                 await asyncio.sleep(extra_wait)
                             
+                            if SIMULATE_TYPING:
+                                try:
+                                    typing_delay = round(random.uniform(0.6, 1.4), 1)
+                                    async with channel.typing():
+                                        await asyncio.sleep(typing_delay)
+                                except Exception:
+                                    pass
+
                             await channel.send(action["value"])
                             self.last_sent_time = time.time()
                             print(f"[{loop_name}] Sent: {action['value']}")

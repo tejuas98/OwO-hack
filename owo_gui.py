@@ -17,7 +17,7 @@ class OwOBotGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("OwO Bot Dashboard")
-        self.root.geometry("680x560")
+        self.root.geometry("680x575")
         
         # --- Top Controls & Status Frame ---
         self.top_frame = tk.Frame(root, pady=8, padx=10)
@@ -53,6 +53,13 @@ class OwOBotGUI:
         self.toggle_token_btn = tk.Checkbutton(token_subframe, text="Show", variable=self.show_token_var, command=self.toggle_token_visibility)
         self.toggle_token_btn.pack(side=tk.RIGHT)
         
+        # Row 2: Options
+        options_subframe = tk.Frame(self.config_frame)
+        options_subframe.pack(fill=tk.X, pady=2)
+        self.typing_var = tk.BooleanVar(value=True)
+        self.typing_cb = tk.Checkbutton(options_subframe, text="Simulate typing status ('User is typing...')", variable=self.typing_var)
+        self.typing_cb.pack(side=tk.LEFT)
+        
         initial_script_1 = "ob\nwait 16-20\nob\nwait 16-20\nob\nwait 16-20\nob\nwait 16-20"
         initial_script_2 = "wait 3\nwh\nwait 16-20\nwh\nwait 16-20\nwh\nwait 16-20"
         initial_script_3 = "wait 5\nOwO\nwait 10-15\nOwO\nwait 10-15\nOwO\nwait 10-15"
@@ -70,6 +77,7 @@ class OwOBotGUI:
                 self.channel_var_1.set(ch1)
                 self.channel_var_2.set(str(conf.get("owo_channel_2", "")) or ch1)
                 self.channel_var_3.set(str(conf.get("owo_channel_3", "")) or ch1)
+                self.typing_var.set(bool(conf.get("simulate_typing", True)))
                 
                 initial_script_1 = conf.get("owo_script", initial_script_1)
                 initial_script_2 = conf.get("owo_script_2", initial_script_2)
@@ -200,6 +208,7 @@ class OwOBotGUI:
                 conf["owo_script"] = script_content_1
                 conf["owo_script_2"] = script_content_2
                 conf["owo_script_3"] = script_content_3
+                conf["simulate_typing"] = self.typing_var.get()
                 with open(CONFIG_FILE, "w") as f:
                     json.dump(conf, f, indent=3)
                 self.log(f"\n[System] Saved configuration to owo_config.json.\n")

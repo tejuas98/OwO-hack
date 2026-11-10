@@ -119,7 +119,19 @@ To prevent simultaneous transmissions across concurrent tasks, the engine enforc
 
 This guarantees that battle and hunt commands never fire simultaneously or within 2 to 4 seconds of each other.
 
-### 2.4 Anti-Obfuscation Captcha Defense
+### 2.4 Human Typing Status Simulation
+Real human users display an active "User is typing..." presence in Discord channels prior to dispatching messages. Instantaneous message bursts without a preceding typing trigger represent a primary heuristic used by anti-automation detectors.
+
+When `simulate_typing` is enabled (default: `true`):
+- Immediately prior to sending a command, the client initiates the official Discord typing lifecycle via `async with channel.typing():`.
+- It sustains the animated typing status for a realistic duration:
+
+  $$\Delta t_{\text{typing}} \sim \mathcal{U}(0.6, 1.4)$$
+
+- Users and bot observers in the server observe the native "User is typing..." indicator before the message arrives.
+- Can be enabled or disabled at any time via the dashboard checkbox.
+
+### 2.5 Anti-Obfuscation Captcha Defense
 Automated detection systems often disguise verification challenges using invisible zero-width unicode characters (e.g., `U+200B`, `U+200C`, `U+FEFF`), varied casing, and non-alphanumeric separators.
 
 The verification interception pipeline processes incoming messages through an aggressive regex normalizer:
