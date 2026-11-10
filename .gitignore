@@ -1,0 +1,15 @@
+# Personal configuration containing Discord Auth Token and Channel IDs
+data/owo_config.json
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# macOS system files
+.DS_Store
+
+# Environments
+venv/
+env/
+.env
