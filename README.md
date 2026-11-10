@@ -150,24 +150,30 @@ Upon match detection, the bot immediately halts all tasks, initializes a continu
 
 ---
 
-## 3. Graphical Interface & User Dashboard
+## 3. Graphical Interface & Discord AMOLED Dashboard
 
-The suite features a custom dark desktop dashboard engineered to avoid default OS Aqua rendering quirks and provide a unified Discord-inspired visual hierarchy.
+The desktop application is crafted around Discord's Midnight AMOLED aesthetic, featuring pure pitch-black surfaces (`#000000`), Discord Blurple branding accents (`#5865F2`), and a streamlined, intuitive control hierarchy:
 
-![Redesigned Dashboard](assets/dashboard_redesign_preview.png)
+- **Discord Brand Palette:** Engineered with pitch-black root backgrounds (`#000000`), dark card surfaces (`#111214`), and vibrant Blurple pill buttons (`#5865F2`) with Danger Red controls (`#DA373C`) and live status indicators (`#23A55A`).
+- **Segmented Loop Navigation:** Clean Discord pill tabs (`Main Loop`, `Secondary Loop`, `Third Loop`) allowing instant inspection and editing of commands, channels, and activation states without cluttered nested windows.
+- **Per-Loop Activation Toggles:** Individual `[✓] Enable Loop` checkboxes per tab give users granular control to run any single loop, any combination of two loops, or all three loops simultaneously.
+- **Dynamic Syntax-Colored Telemetry:** An AMOLED black terminal console highlights incoming events in real time: Blurple for system announcements and chat events, Emerald Green for Main Loop dispatches, Yellow for Secondary Loop dispatches, Fuchsia for Third Loop dispatches, Mint Green for typing presence, and Amber for dynamic jitter delays and anti-collision spacing.
+- **Autohiding Scrollbar:** The terminal scrollbar automatically stays hidden when logs fit on screen and smoothly fades in only when telemetry overflows, preventing unsightly borders.
+
+![Discord AMOLED Dashboard](assets/dashboard_redesign_preview.png)
 
 ### 3.1 Main Loop Configuration
-Dedicated interface for primary battle and farming commands (`ob`).
+Dedicated interface for primary battle and farming commands (`ob`) mapped to Channel 1.
 
 ![Main Loop Dashboard](assets/dashboard_main_loop.png)
 
 ### 3.2 Secondary Loop Configuration
-Dedicated interface for secondary hunting commands (`wh`) mapped to an alternate channel.
+Dedicated interface for secondary hunting commands (`wh`) mapped to Channel 2.
 
 ![Secondary Loop Dashboard](assets/dashboard_secondary_loop.png)
 
 ### 3.3 Third Loop Configuration
-Dedicated interface for auxiliary interval commands (`OwO`) mapped to a third target channel.
+Dedicated interface for auxiliary interval commands (`OwO`) mapped to Channel 3.
 
 ![Third Loop Dashboard](assets/dashboard_third_loop.png)
 
