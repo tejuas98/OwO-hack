@@ -6,6 +6,9 @@
    "owo_script": "ob\nwait 16-20\nob\nwait 16-20\nob\nwait 16-20\nob\nwait 16-20",
    "owo_script_2": "wait 3\nwh\nwait 16-20\nwh\nwait 16-20\nwh\nwait 16-20",
    "owo_script_3": "wait 5\nOwO\nwait 10-15\nOwO\nwait 10-15\nOwO\nwait 10-15",
-   "simulate_typing": true
+   "simulate_typing": true,
+   "loop_1_enabled": true,
+   "loop_2_enabled": true,
+   "loop_3_enabled": true
 }
 

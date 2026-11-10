@@ -29,6 +29,10 @@ CHANNEL_ID_2 = config.get("owo_channel_2", "") or CHANNEL_ID_1
 CHANNEL_ID_3 = config.get("owo_channel_3", "") or CHANNEL_ID_1
 SIMULATE_TYPING = bool(config.get("simulate_typing", True))
 
+LOOP_1_ENABLED = bool(config.get("loop_1_enabled", True))
+LOOP_2_ENABLED = bool(config.get("loop_2_enabled", True))
+LOOP_3_ENABLED = bool(config.get("loop_3_enabled", True))
+
 SCRIPT_CONTENT_1 = config.get("owo_script", "")
 SCRIPT_CONTENT_2 = config.get("owo_script_2", "")
 SCRIPT_CONTENT_3 = config.get("owo_script_3", "OwO\nwait 10-15\nOwO\nwait 10-15\nOwO\nwait 10-15")
@@ -87,9 +91,22 @@ CH_1 = clean_channel_id(CHANNEL_ID_1)
 CH_2 = clean_channel_id(CHANNEL_ID_2)
 CH_3 = clean_channel_id(CHANNEL_ID_3)
 
-if not CH_1 and not CH_2 and not CH_3:
-    print("[ERROR] No valid Channel ID configured.")
+active_needed = []
+if LOOP_1_ENABLED:
+    active_needed.append(("Main Loop", CH_1))
+if LOOP_2_ENABLED:
+    active_needed.append(("Secondary Loop", CH_2))
+if LOOP_3_ENABLED:
+    active_needed.append(("Third Loop", CH_3))
+
+if not active_needed:
+    print("[ERROR] No loops are enabled in configuration.")
     sys.exit(1)
+
+for name, cid in active_needed:
+    if not cid:
+        print(f"[ERROR] {name} is enabled but has no valid Channel ID.")
+        sys.exit(1)
 
 class OwOBot(commands.Bot):
     def __init__(self):
@@ -104,21 +121,27 @@ class OwOBot(commands.Bot):
     async def on_ready(self):
         print(f"[INFO] Logged in as {self.user.name} ({self.user.id})")
         
-        if not self.spam_task_1 and parsed_actions_1 and CH_1:
+        if LOOP_1_ENABLED and not self.spam_task_1 and parsed_actions_1 and CH_1:
             print(f"[INFO] Main Loop assigned to channel: {CH_1}")
             self.spam_task_1 = self.loop.create_task(self.execute_loop("Main Loop", CH_1, parsed_actions_1))
+        elif not LOOP_1_ENABLED:
+            print("[INFO] Main Loop is disabled.")
         elif not parsed_actions_1:
             print("[INFO] Main Loop script is empty.")
             
-        if not self.spam_task_2 and parsed_actions_2 and CH_2:
+        if LOOP_2_ENABLED and not self.spam_task_2 and parsed_actions_2 and CH_2:
             print(f"[INFO] Secondary Loop assigned to channel: {CH_2}")
             self.spam_task_2 = self.loop.create_task(self.execute_loop("Secondary Loop", CH_2, parsed_actions_2))
+        elif not LOOP_2_ENABLED:
+            print("[INFO] Secondary Loop is disabled.")
         elif not parsed_actions_2:
             print("[INFO] Secondary Loop script is empty.")
 
-        if not self.spam_task_3 and parsed_actions_3 and CH_3:
+        if LOOP_3_ENABLED and not self.spam_task_3 and parsed_actions_3 and CH_3:
             print(f"[INFO] Third Loop assigned to channel: {CH_3}")
             self.spam_task_3 = self.loop.create_task(self.execute_loop("Third Loop", CH_3, parsed_actions_3))
+        elif not LOOP_3_ENABLED:
+            print("[INFO] Third Loop is disabled.")
         elif not parsed_actions_3:
             print("[INFO] Third Loop script is empty.")
 
@@ -163,6 +186,8 @@ class OwOBot(commands.Bot):
                             if SIMULATE_TYPING:
                                 try:
                                     typing_delay = round(random.uniform(0.6, 1.4), 1)
+                                    print(f"[{loop_name}] Typing ({typing_delay}s)...")
+                                    sys.stdout.flush()
                                     async with channel.typing():
                                         await asyncio.sleep(typing_delay)
                                 except Exception:
@@ -182,7 +207,7 @@ class OwOBot(commands.Bot):
             if message.author.id == self.user.id:
                 return
 
-            active_channels = {cid for cid in [CH_1, CH_2, CH_3] if cid}
+            active_channels = {cid for enabled, cid in [(LOOP_1_ENABLED, CH_1), (LOOP_2_ENABLED, CH_2), (LOOP_3_ENABLED, CH_3)] if enabled and cid}
             is_in_active_channel = message.channel.id in active_channels
             is_dm = isinstance(message.channel, discord.DMChannel)
 

@@ -41,6 +41,9 @@ class OwOBotGUI:
         self.channel_var_2 = tk.StringVar()
         self.channel_var_3 = tk.StringVar()
         self.show_token_var = tk.BooleanVar(value=False)
+        self.loop_1_enable_var = tk.BooleanVar(value=True)
+        self.loop_2_enable_var = tk.BooleanVar(value=True)
+        self.loop_3_enable_var = tk.BooleanVar(value=True)
         
         # Row 1: Auth Token
         token_subframe = tk.Frame(self.config_frame)
@@ -78,6 +81,9 @@ class OwOBotGUI:
                 self.channel_var_2.set(str(conf.get("owo_channel_2", "")) or ch1)
                 self.channel_var_3.set(str(conf.get("owo_channel_3", "")) or ch1)
                 self.typing_var.set(bool(conf.get("simulate_typing", True)))
+                self.loop_1_enable_var.set(bool(conf.get("loop_1_enabled", True)))
+                self.loop_2_enable_var.set(bool(conf.get("loop_2_enabled", True)))
+                self.loop_3_enable_var.set(bool(conf.get("loop_3_enabled", True)))
                 
                 initial_script_1 = conf.get("owo_script", initial_script_1)
                 initial_script_2 = conf.get("owo_script_2", initial_script_2)
@@ -101,8 +107,10 @@ class OwOBotGUI:
         
         tab1_header = tk.Frame(self.tab1, bg="#2b2b2b")
         tab1_header.pack(fill=tk.X, pady=(0, 4))
+        self.enable_cb_1 = tk.Checkbutton(tab1_header, text="Enable Loop", variable=self.loop_1_enable_var, bg="#2b2b2b", fg="#00ff00", selectcolor="#1e1e1e", activebackground="#2b2b2b", activeforeground="#00ff00", font=("Helvetica", 10, "bold"))
+        self.enable_cb_1.pack(side=tk.LEFT, padx=(0, 15))
         tk.Label(tab1_header, text="Channel ID:", bg="#2b2b2b", fg="#ffffff", font=("Helvetica", 10, "bold")).pack(side=tk.LEFT)
-        self.channel_entry_1 = tk.Entry(tab1_header, textvariable=self.channel_var_1, font=("Consolas", 10), width=28)
+        self.channel_entry_1 = tk.Entry(tab1_header, textvariable=self.channel_var_1, font=("Consolas", 10), width=24)
         self.channel_entry_1.pack(side=tk.LEFT, padx=(6, 10))
         
         self.script_area_1 = scrolledtext.ScrolledText(self.tab1, height=4, font=("Consolas", 11), bg="#222222", fg="#ffffff", borderwidth=0)
@@ -115,8 +123,10 @@ class OwOBotGUI:
         
         tab2_header = tk.Frame(self.tab2, bg="#2b2b2b")
         tab2_header.pack(fill=tk.X, pady=(0, 4))
+        self.enable_cb_2 = tk.Checkbutton(tab2_header, text="Enable Loop", variable=self.loop_2_enable_var, bg="#2b2b2b", fg="#00ff00", selectcolor="#1e1e1e", activebackground="#2b2b2b", activeforeground="#00ff00", font=("Helvetica", 10, "bold"))
+        self.enable_cb_2.pack(side=tk.LEFT, padx=(0, 15))
         tk.Label(tab2_header, text="Channel ID:", bg="#2b2b2b", fg="#ffffff", font=("Helvetica", 10, "bold")).pack(side=tk.LEFT)
-        self.channel_entry_2 = tk.Entry(tab2_header, textvariable=self.channel_var_2, font=("Consolas", 10), width=28)
+        self.channel_entry_2 = tk.Entry(tab2_header, textvariable=self.channel_var_2, font=("Consolas", 10), width=24)
         self.channel_entry_2.pack(side=tk.LEFT, padx=(6, 10))
         
         self.script_area_2 = scrolledtext.ScrolledText(self.tab2, height=4, font=("Consolas", 11), bg="#222222", fg="#ffffff", borderwidth=0)
@@ -129,8 +139,10 @@ class OwOBotGUI:
         
         tab3_header = tk.Frame(self.tab3, bg="#2b2b2b")
         tab3_header.pack(fill=tk.X, pady=(0, 4))
+        self.enable_cb_3 = tk.Checkbutton(tab3_header, text="Enable Loop", variable=self.loop_3_enable_var, bg="#2b2b2b", fg="#00ff00", selectcolor="#1e1e1e", activebackground="#2b2b2b", activeforeground="#00ff00", font=("Helvetica", 10, "bold"))
+        self.enable_cb_3.pack(side=tk.LEFT, padx=(0, 15))
         tk.Label(tab3_header, text="Channel ID:", bg="#2b2b2b", fg="#ffffff", font=("Helvetica", 10, "bold")).pack(side=tk.LEFT)
-        self.channel_entry_3 = tk.Entry(tab3_header, textvariable=self.channel_var_3, font=("Consolas", 10), width=28)
+        self.channel_entry_3 = tk.Entry(tab3_header, textvariable=self.channel_var_3, font=("Consolas", 10), width=24)
         self.channel_entry_3.pack(side=tk.LEFT, padx=(6, 10))
         
         self.script_area_3 = scrolledtext.ScrolledText(self.tab3, height=4, font=("Consolas", 11), bg="#222222", fg="#ffffff", borderwidth=0)
@@ -188,8 +200,22 @@ class OwOBotGUI:
                 self.log("\n[Error] Please enter your Authorization Token before starting the bot.\n")
                 return
                 
-            if not ch1 and not ch2 and not ch3:
-                self.log("\n[Error] Please enter at least one Channel ID before starting the bot.\n")
+            en1 = self.loop_1_enable_var.get()
+            en2 = self.loop_2_enable_var.get()
+            en3 = self.loop_3_enable_var.get()
+
+            if not en1 and not en2 and not en3:
+                self.log("\n[Error] Please enable at least one loop before starting the bot.\n")
+                return
+
+            if en1 and not ch1:
+                self.log("\n[Error] Main Loop is enabled but Channel ID is empty.\n")
+                return
+            if en2 and not ch2:
+                self.log("\n[Error] Secondary Loop is enabled but Channel ID is empty.\n")
+                return
+            if en3 and not ch3:
+                self.log("\n[Error] Third Loop is enabled but Channel ID is empty.\n")
                 return
                 
             script_content_1 = self.script_area_1.get("1.0", tk.END).strip()
@@ -209,6 +235,9 @@ class OwOBotGUI:
                 conf["owo_script_2"] = script_content_2
                 conf["owo_script_3"] = script_content_3
                 conf["simulate_typing"] = self.typing_var.get()
+                conf["loop_1_enabled"] = en1
+                conf["loop_2_enabled"] = en2
+                conf["loop_3_enabled"] = en3
                 with open(CONFIG_FILE, "w") as f:
                     json.dump(conf, f, indent=3)
                 self.log(f"\n[System] Saved configuration to owo_config.json.\n")

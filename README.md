@@ -53,10 +53,12 @@ flowchart TD
 ## 2. Core Technical Components
 
 ### 2.1 Multi-Task Asynchronous Event Loop
-The backend runtime leverages Python's `asyncio` cooperative multitasking framework. Rather than sequential blocking loops, the client schedules three concurrent workers:
+The backend runtime leverages Python's `asyncio` cooperative multitasking framework. Rather than sequential blocking loops, the client schedules up to three independent concurrent workers:
 - **`spam_task_1` (Main Loop):** Dispatches commands mapped to `owo_channel`.
 - **`spam_task_2` (Secondary Loop):** Dispatches commands mapped to `owo_channel_2`.
 - **`spam_task_3` (Third Loop):** Dispatches commands mapped to `owo_channel_3`.
+
+Each loop is individually toggleable through its dedicated **Enable Loop** checkbox inside each tab header. You can selectively run any single loop, any two loops, or all three loops concurrently. Unchecked loops remain dormant and do not consume resources or spawn background coroutines.
 
 Each task operates independently on its own execution timeline. An interruption or delay in one channel does not alter the scheduling cadence of the other channels.
 
