@@ -4,6 +4,27 @@ A high-performance, asynchronous desktop automation suite and graphical dashboar
 
 ---
 
+## Codebase Anatomy
+
+```text
+OwO-hack/
+├── assets/                          # Dashboard preview screenshots and UI media
+│   ├── dashboard_main_loop.png      # Real-time execution telemetry preview for Main Loop (Loop 1)
+│   ├── dashboard_redesign_preview.png # Midnight AMOLED desktop interface and unified telemetry preview
+│   ├── dashboard_secondary_loop.png # Real-time execution telemetry preview for Secondary Loop (Loop 2)
+│   └── dashboard_third_loop.png     # Real-time execution telemetry preview for Auxiliary Loop (Loop 3)
+├── data/                            # Persistent state and runtime configurations
+│   ├── owo_config.example.json      # Template configuration with default multi-loop scripts
+│   └── owo_config.json              # Local runtime configuration (ignored by git for token safety)
+├── .gitignore                       # Git exclusion rules (credentials, cache, logs)
+├── owo_gui.py                       # Desktop AMOLED supervisor dashboard and configuration manager (Tkinter)
+├── owo_main.py                      # Multi-loop asynchronous engine, anti-collision lock, and auto-gem listener
+├── requirements.txt                 # Python runtime dependencies (discord.py-self)
+└── README.md                        # Technical documentation, mathematical models, and setup guide
+```
+
+---
+
 ## 1. Architectural Overview
 
 The suite is engineered with a decoupled two-process architecture consisting of a desktop management supervisor (Tkinter GUI) and an asynchronous client worker (`discord.py-self` engine). The worker runs in a separate subprocess with unbuffered standard I/O pipes, ensuring that execution logs, channel responses, and anti-captcha triggers are streamed directly to the dashboard in real time without blocking the UI thread.
