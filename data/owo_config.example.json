@@ -8,6 +8,8 @@
    "owo_script_3": "wait 5\nOwO\nwait 10-15\nOwO\nwait 10-15\nOwO\nwait 10-15",
    "simulate_typing": true,
    "auto_use_gems": true,
+   "gem_command": "owo use 52 66 73",
+   "gem_interval": 25,
    "loop_1_enabled": true,
    "loop_2_enabled": true,
    "loop_3_enabled": true

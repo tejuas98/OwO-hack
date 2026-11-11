@@ -32,6 +32,22 @@ CHANNEL_ID_2 = config.get("owo_channel_2", "") or CHANNEL_ID_1
 CHANNEL_ID_3 = config.get("owo_channel_3", "") or CHANNEL_ID_1
 SIMULATE_TYPING = bool(config.get("simulate_typing", True))
 AUTO_USE_GEMS = bool(config.get("auto_use_gems", True))
+GEM_COMMAND = str(config.get("gem_command", "owo use 52 66 73"))
+GEM_INTERVAL = int(config.get("gem_interval", 25))
+
+def is_hunt_command(cmd_str):
+    if not cmd_str:
+        return False
+    words = cmd_str.strip().lower().split()
+    if not words:
+        return False
+    if words[0] == "wh":
+        return True
+    if words[0] in ["owo", "w"] and len(words) > 1 and words[1] in ["h", "hunt"]:
+        return True
+    if words[0] == "hunt":
+        return True
+    return False
 
 LOOP_1_ENABLED = bool(config.get("loop_1_enabled", True))
 LOOP_2_ENABLED = bool(config.get("loop_2_enabled", True))
@@ -123,16 +139,23 @@ class OwOBot(commands.Bot):
         self.send_lock = asyncio.Lock()
         self.last_gem_used_time = 0.0
         self.auto_use_gems = AUTO_USE_GEMS
+        self.gem_command = GEM_COMMAND
+        self.gem_interval = GEM_INTERVAL
+        self.hunt_count = 0
 
-    async def send_auto_gem_command(self, channel, command):
-        """Dispatches an auto-gem command with rate-limit spacing and typing simulation."""
+    async def dispatch_gem_usage(self, channel):
+        """Dispatches the configured gem command (e.g. owo use 52 66 73) with rate-limit spacing and typing simulation."""
         now = time.time()
-        if (now - self.last_gem_used_time) < 15.0:
-            print(f"[Auto-Gem] Cooldown active (15s), skipping duplicate alert: {command}")
-            sys.stdout.flush()
+        if (now - self.last_gem_used_time) < 10.0:
             return
 
         self.last_gem_used_time = now
+        cmd = self.gem_command.strip()
+        if not cmd:
+            return
+
+        # Natural human pause after hunt action
+        await asyncio.sleep(round(random.uniform(2.0, 3.5), 1))
 
         async with self.send_lock:
             now = time.time()
@@ -155,13 +178,13 @@ class OwOBot(commands.Bot):
                     pass
 
             try:
-                await channel.send(command)
+                await channel.send(cmd)
                 self.last_sent_time = time.time()
                 ch_name = getattr(channel, "name", str(channel.id))
-                print(f"[Auto-Gem] Automatically used gems: {command} in #{ch_name}")
+                print(f"[Auto-Gem] Automatically used gems: {cmd} in #{ch_name}")
                 sys.stdout.flush()
             except Exception as e:
-                print(f"[ERROR] [Auto-Gem] Failed to send '{command}': {e}")
+                print(f"[ERROR] [Auto-Gem] Failed to send '{cmd}': {e}")
                 sys.stdout.flush()
 
     async def on_ready(self):
@@ -243,6 +266,16 @@ class OwOBot(commands.Bot):
                             self.last_sent_time = time.time()
                             print(f"[{loop_name}] Sent: {action['value']}")
                             sys.stdout.flush()
+
+                            if self.auto_use_gems and is_hunt_command(action["value"]):
+                                self.hunt_count += 1
+                                print(f"[Auto-Gem] Hunt progress: {self.hunt_count}/{self.gem_interval}")
+                                sys.stdout.flush()
+                                if self.hunt_count >= self.gem_interval:
+                                    self.hunt_count = 0
+                                    print(f"[Auto-Gem] Threshold of {self.gem_interval} hunts reached! Triggering {self.gem_command}...")
+                                    sys.stdout.flush()
+                                    self.loop.create_task(self.dispatch_gem_usage(channel))
                 except Exception as e:
                     print(f"[ERROR] [{loop_name}] Failed to execute '{action.get('value')}': {e}")
                     sys.stdout.flush()
@@ -312,57 +345,30 @@ class OwOBot(commands.Bot):
                     os._exit(0)
 
                 # -----------------------------------------------------------
-                # Auto-Gem Detection: Listen for bot reminders (e.g. NeonUtil)
-                # Example message: "@rudruo, time to use gems! \n| owo use 52 66 73"
+                # Auto-Gem Synchronization: Detect [0/25] charges from OwO Bot
+                # Example: "| rudruo, hunt is empowered by [0/25] [0/100] [0/100] !"
                 # -----------------------------------------------------------
-                if self.auto_use_gems and is_in_active_channel:
+                if self.auto_use_gems and is_in_active_channel and message.author.id == self.owo_bot_id:
                     full_text = message.content or ""
                     for embed in message.embeds:
-                        if embed.title:
-                            full_text += "\n" + str(embed.title)
                         if embed.description:
-                            full_text += "\n" + str(embed.description)
-                        for field in getattr(embed, "fields", []):
-                            if field.name:
-                                full_text += "\n" + str(field.name)
-                            if field.value:
-                                full_text += "\n" + str(field.value)
+                            full_text += " " + str(embed.description)
+                        if embed.title:
+                            full_text += " " + str(embed.title)
 
-                    # Check if the alert is addressed to us
-                    is_for_me = False
-                    if self.user in getattr(message, "mentions", []):
-                        is_for_me = True
-                    elif f"<@{self.user.id}>" in full_text or f"<@!{self.user.id}>" in full_text:
-                        is_for_me = True
-                    elif self.user.name.lower() in full_text.lower():
-                        is_for_me = True
-                    elif getattr(self.user, "display_name", "").lower() in full_text.lower():
-                        is_for_me = True
-                    elif len(getattr(message, "mentions", [])) == 0:
-                        is_for_me = True
+                    is_for_me = (
+                        self.user.name.lower() in full_text.lower() or
+                        getattr(self.user, "display_name", "").lower() in full_text.lower() or
+                        f"<@{self.user.id}>" in full_text
+                    )
 
-                    if is_for_me:
-                        lower_text = full_text.lower()
-                        has_gem_alert = (
-                            "time to use gems" in lower_text or
-                            "use gems" in lower_text or
-                            "out of gems" in lower_text or
-                            "gems are out" in lower_text or
-                            ("gem" in lower_text and "owo use" in lower_text) or
-                            ("\U0001f48e" in full_text and "owo use" in lower_text) or
-                            (getattr(message.author, "bot", False) and "owo use" in lower_text)
-                        )
-
-                        if has_gem_alert:
-                            match = re.search(r'\b(owo\s+use(?:\s+\d+)+)\b', full_text, re.IGNORECASE)
-                            if match:
-                                gem_numbers = re.findall(r'\b\d+\b', match.group(1))
-                                if gem_numbers:
-                                    clean_gem_cmd = f"owo use {' '.join(gem_numbers)}"
-                                    sender_name = message.author.name
-                                    print(f"[Auto-Gem] Detected gem alert from {sender_name}: '{clean_gem_cmd}'")
-                                    sys.stdout.flush()
-                                    self.loop.create_task(self.send_auto_gem_command(message.channel, clean_gem_cmd))
+                    if is_for_me and "[0/25]" in full_text:
+                        now = time.time()
+                        if (now - self.last_gem_used_time) > 10.0:
+                            print(f"[Auto-Gem] OwO verified [0/25] gems remaining for {self.user.name}. Triggering refill...")
+                            sys.stdout.flush()
+                            self.hunt_count = 0
+                            self.loop.create_task(self.dispatch_gem_usage(message.channel))
         except Exception as e:
             print(f"[ERROR] Failed to process message: {e}")
 

@@ -169,6 +169,7 @@ class OwOBotGUI:
         self.loop_3_enable_var = tk.BooleanVar(value=True)
         self.typing_var = tk.BooleanVar(value=True)
         self.auto_gems_var = tk.BooleanVar(value=True)
+        self.gem_command_var = tk.StringVar(value="owo use 52 66 73")
         self.current_tab = 1
         self._suppress_tab_save = False
 
@@ -218,15 +219,24 @@ class OwOBotGUI:
         self.show_token_cb = DiscordCheckbox(token_row, text="Show", variable=self.show_token_var, command=self.toggle_token_visibility)
         self.show_token_cb.pack(side=tk.RIGHT)
 
-        # Row 2: Options (Human Typing & Auto-Gems)
+        # Row 2: Options (Human Typing & Auto-Gems Every 25 Hunts)
         options_row = tk.Frame(self.config_frame, bg=COLOR_BG_ROOT)
         options_row.pack(fill=tk.X, pady=(0, 8))
 
-        self.typing_cb = DiscordCheckbox(options_row, text="Simulate typing status ('User is typing...')", variable=self.typing_var)
-        self.typing_cb.pack(side=tk.LEFT, padx=(0, 16))
+        self.typing_cb = DiscordCheckbox(options_row, text="Simulate typing status", variable=self.typing_var)
+        self.typing_cb.pack(side=tk.LEFT, padx=(0, 14))
 
-        self.auto_gems_cb = DiscordCheckbox(options_row, text="Auto-use gems on bot alerts ('time to use gems!')", variable=self.auto_gems_var)
-        self.auto_gems_cb.pack(side=tk.LEFT)
+        self.auto_gems_cb = DiscordCheckbox(options_row, text="Auto-use gems every 25 hunts", variable=self.auto_gems_var)
+        self.auto_gems_cb.pack(side=tk.LEFT, padx=(0, 8))
+
+        tk.Label(options_row, text="Gems:", fg=COLOR_TEXT_PRIMARY, bg=COLOR_BG_ROOT,
+                 font=("Helvetica", 9, "bold")).pack(side=tk.LEFT, padx=(0, 4))
+
+        self.gem_cmd_entry = tk.Entry(options_row, textvariable=self.gem_command_var, font=("Menlo", 9),
+                                      bg=COLOR_BG_INPUT, fg="#00e5ff", insertbackground=COLOR_BLURPLE,
+                                      relief="flat", highlightthickness=1, highlightbackground=COLOR_BORDER,
+                                      highlightcolor=COLOR_BLURPLE, width=17)
+        self.gem_cmd_entry.pack(side=tk.LEFT, ipady=2)
 
         # ==========================================
         # 3. Discord Tab Bar
@@ -334,6 +344,7 @@ class OwOBotGUI:
                 self.channel_var_3.set(str(conf.get("owo_channel_3", "")) or ch1)
                 self.typing_var.set(bool(conf.get("simulate_typing", True)))
                 self.auto_gems_var.set(bool(conf.get("auto_use_gems", True)))
+                self.gem_command_var.set(str(conf.get("gem_command", "owo use 52 66 73")))
                 self.loop_1_enable_var.set(bool(conf.get("loop_1_enabled", True)))
                 self.loop_2_enable_var.set(bool(conf.get("loop_2_enabled", True)))
                 self.loop_3_enable_var.set(bool(conf.get("loop_3_enabled", True)))
@@ -499,6 +510,8 @@ class OwOBotGUI:
                 conf["owo_script_3"] = self.script_data_3
                 conf["simulate_typing"] = self.typing_var.get()
                 conf["auto_use_gems"] = self.auto_gems_var.get()
+                conf["gem_command"] = self.gem_command_var.get().strip() or "owo use 52 66 73"
+                conf["gem_interval"] = 25
                 conf["loop_1_enabled"] = en1
                 conf["loop_2_enabled"] = en2
                 conf["loop_3_enabled"] = en3
