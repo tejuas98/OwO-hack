@@ -148,6 +148,19 @@ The verification interception pipeline processes incoming messages through an ag
 
 Upon match detection, the bot immediately halts all tasks, initializes a continuous audio alert thread (`afplay /System/Library/Sounds/Glass.aiff`), triggers an operating system notification, and displays a blocking modal dialog requiring manual intervention before process termination.
 
+### 2.6 Automatic Gem Detection & Command Dispatching
+When hunting or battling in designated channels, companion bots (such as `NeonUtil`) monitor player status and dispatch notifications when gem buffs expire:
+```text
+NeonUtil: @username, time to use gems!
+| owo use 52 66 73
+```
+The suite features a dedicated reactive listener for these notifications:
+- **Target Addressing Verification:** Confirms that the reminder is explicitly directed to the authenticated user via mention tag (`<@user_id>`), raw user ID, or username match.
+- **Robust Regex Extraction:** Parses the command payload using `\b(owo\s+use(?:\s+\d+)+)\b` and isolates all target gem IDs, cleanly extracting the executable command regardless of Discord markdown formatting (backticks, blockquotes, pipes, or embeds).
+- **Concurrency & Anti-Ban Spacing:** Rather than sending immediately and creating packet collisions with running loops, the auto-gem routine acquires `self.send_lock`, enforces a 2.0 to 3.5 second human gap, activates simulated Discord typing, and dispatches the exact command (`owo use 52 66 73`).
+- **15-Second Anti-Spam Debounce:** Automatically suppresses duplicate bot alerts within a 15-second cooldown window.
+- **GUI and Config Integration:** Can be toggled on/off in `owo_config.json` via `"auto_use_gems": true` or the dashboard checkbox, and logs in real time with dedicated Diamond Cyan syntax highlighting.
+
 ---
 
 ## 3. Graphical Interface & Discord AMOLED Dashboard
@@ -157,7 +170,7 @@ The desktop application is crafted around Discord's Midnight AMOLED aesthetic, f
 - **Discord Brand Palette:** Engineered with pitch-black root backgrounds (`#000000`), dark card surfaces (`#111214`), and vibrant Blurple pill buttons (`#5865F2`) with Danger Red controls (`#DA373C`) and live status indicators (`#23A55A`).
 - **Segmented Loop Navigation:** Clean Discord pill tabs (`Main Loop`, `Secondary Loop`, `Third Loop`) allowing instant inspection and editing of commands, channels, and activation states without cluttered nested windows.
 - **Per-Loop Activation Toggles:** Individual `[✓] Enable Loop` checkboxes per tab give users granular control to run any single loop, any combination of two loops, or all three loops simultaneously.
-- **Dynamic Syntax-Colored Telemetry:** An AMOLED black terminal console highlights incoming events in real time: Blurple for system announcements and chat events, Emerald Green for Main Loop dispatches, Yellow for Secondary Loop dispatches, Fuchsia for Third Loop dispatches, Mint Green for typing presence, and Amber for dynamic jitter delays and anti-collision spacing.
+- **Dynamic Syntax-Colored Telemetry:** An AMOLED black terminal console highlights incoming events in real time: Blurple for system announcements and chat events, Emerald Green for Main Loop dispatches, Yellow for Secondary Loop dispatches, Fuchsia for Third Loop dispatches, Diamond Cyan for Auto-Gem detections and dispatches, Mint Green for typing presence, and Amber for dynamic jitter delays and anti-collision spacing.
 - **Autohiding Scrollbar:** The terminal scrollbar automatically stays hidden when logs fit on screen and smoothly fades in only when telemetry overflows, preventing unsightly borders.
 
 ![Discord AMOLED Dashboard](assets/dashboard_redesign_preview.png)
@@ -258,7 +271,12 @@ Edit `data/owo_config.json` with your Discord authorization token and target Cha
    "owo_channel_3": "TARGET_CHANNEL_ID_FOR_LOOP_3",
    "owo_script": "ob\nwait 16-20\nob\nwait 16-20",
    "owo_script_2": "wh\nwait 16-20\nwh\nwait 16-20",
-   "owo_script_3": "OwO\nwait 10-15\nOwO\nwait 10-15"
+   "owo_script_3": "OwO\nwait 10-15\nOwO\nwait 10-15",
+   "simulate_typing": true,
+   "auto_use_gems": true,
+   "loop_1_enabled": true,
+   "loop_2_enabled": true,
+   "loop_3_enabled": true
 }
 ```
 

@@ -4,6 +4,9 @@ import json
 import asyncio
 import sys
 import os
+import time
+import random
+import re
 
 # Set working directory to file's directory
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -28,6 +31,7 @@ CHANNEL_ID_1 = config.get("owo_channel", "")
 CHANNEL_ID_2 = config.get("owo_channel_2", "") or CHANNEL_ID_1
 CHANNEL_ID_3 = config.get("owo_channel_3", "") or CHANNEL_ID_1
 SIMULATE_TYPING = bool(config.get("simulate_typing", True))
+AUTO_USE_GEMS = bool(config.get("auto_use_gems", True))
 
 LOOP_1_ENABLED = bool(config.get("loop_1_enabled", True))
 LOOP_2_ENABLED = bool(config.get("loop_2_enabled", True))
@@ -117,6 +121,48 @@ class OwOBot(commands.Bot):
         self.owo_bot_id = 408785106942164992  # Official OwO bot ID
         self.last_sent_time = 0.0
         self.send_lock = asyncio.Lock()
+        self.last_gem_used_time = 0.0
+        self.auto_use_gems = AUTO_USE_GEMS
+
+    async def send_auto_gem_command(self, channel, command):
+        """Dispatches an auto-gem command with rate-limit spacing and typing simulation."""
+        now = time.time()
+        if (now - self.last_gem_used_time) < 15.0:
+            print(f"[Auto-Gem] Cooldown active (15s), skipping duplicate alert: {command}")
+            sys.stdout.flush()
+            return
+
+        self.last_gem_used_time = now
+
+        async with self.send_lock:
+            now = time.time()
+            elapsed = now - self.last_sent_time
+            required_gap = round(random.uniform(2.0, 3.5), 1)
+            if self.last_sent_time > 0 and elapsed < required_gap:
+                extra_wait = round(required_gap - elapsed, 1)
+                print(f"[Auto-Gem] Spacing gem command ({extra_wait}s gap to prevent overlap)...")
+                sys.stdout.flush()
+                await asyncio.sleep(extra_wait)
+
+            if SIMULATE_TYPING:
+                try:
+                    typing_delay = round(random.uniform(0.6, 1.4), 1)
+                    print(f"[Auto-Gem] Typing gem command ({typing_delay}s)...")
+                    sys.stdout.flush()
+                    async with channel.typing():
+                        await asyncio.sleep(typing_delay)
+                except Exception:
+                    pass
+
+            try:
+                await channel.send(command)
+                self.last_sent_time = time.time()
+                ch_name = getattr(channel, "name", str(channel.id))
+                print(f"[Auto-Gem] Automatically used gems: {command} in #{ch_name}")
+                sys.stdout.flush()
+            except Exception as e:
+                print(f"[ERROR] [Auto-Gem] Failed to send '{command}': {e}")
+                sys.stdout.flush()
 
     async def on_ready(self):
         print(f"[INFO] Logged in as {self.user.name} ({self.user.id})")
@@ -264,6 +310,59 @@ class OwOBot(commands.Bot):
                     stop_ringing = True
                     time.sleep(1)
                     os._exit(0)
+
+                # -----------------------------------------------------------
+                # Auto-Gem Detection: Listen for bot reminders (e.g. NeonUtil)
+                # Example message: "@rudruo, time to use gems! \n| owo use 52 66 73"
+                # -----------------------------------------------------------
+                if self.auto_use_gems and is_in_active_channel:
+                    full_text = message.content or ""
+                    for embed in message.embeds:
+                        if embed.title:
+                            full_text += "\n" + str(embed.title)
+                        if embed.description:
+                            full_text += "\n" + str(embed.description)
+                        for field in getattr(embed, "fields", []):
+                            if field.name:
+                                full_text += "\n" + str(field.name)
+                            if field.value:
+                                full_text += "\n" + str(field.value)
+
+                    # Check if the alert is addressed to us
+                    is_for_me = False
+                    if self.user in getattr(message, "mentions", []):
+                        is_for_me = True
+                    elif f"<@{self.user.id}>" in full_text or f"<@!{self.user.id}>" in full_text:
+                        is_for_me = True
+                    elif self.user.name.lower() in full_text.lower():
+                        is_for_me = True
+                    elif getattr(self.user, "display_name", "").lower() in full_text.lower():
+                        is_for_me = True
+                    elif len(getattr(message, "mentions", [])) == 0:
+                        is_for_me = True
+
+                    if is_for_me:
+                        lower_text = full_text.lower()
+                        has_gem_alert = (
+                            "time to use gems" in lower_text or
+                            "use gems" in lower_text or
+                            "out of gems" in lower_text or
+                            "gems are out" in lower_text or
+                            ("gem" in lower_text and "owo use" in lower_text) or
+                            ("\U0001f48e" in full_text and "owo use" in lower_text) or
+                            (getattr(message.author, "bot", False) and "owo use" in lower_text)
+                        )
+
+                        if has_gem_alert:
+                            match = re.search(r'\b(owo\s+use(?:\s+\d+)+)\b', full_text, re.IGNORECASE)
+                            if match:
+                                gem_numbers = re.findall(r'\b\d+\b', match.group(1))
+                                if gem_numbers:
+                                    clean_gem_cmd = f"owo use {' '.join(gem_numbers)}"
+                                    sender_name = message.author.name
+                                    print(f"[Auto-Gem] Detected gem alert from {sender_name}: '{clean_gem_cmd}'")
+                                    sys.stdout.flush()
+                                    self.loop.create_task(self.send_auto_gem_command(message.channel, clean_gem_cmd))
         except Exception as e:
             print(f"[ERROR] Failed to process message: {e}")
 

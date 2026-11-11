@@ -37,6 +37,7 @@ COLOR_TAG_CHAT = "#5865f2"        # Discord Blurple
 COLOR_TAG_TYPING = "#00d26a"      # Mint / Typing Green
 COLOR_TAG_WAIT = "#faa61a"        # Amber / Orange
 COLOR_TAG_ALERT = "#ed4245"       # Discord Red Alert
+COLOR_TAG_GEM = "#00e5ff"         # Diamond Cyan (Auto-Gem)
 COLOR_TAG_DEFAULT = "#dbdee1"     # Clean soft white
 
 
@@ -153,8 +154,8 @@ class OwOBotGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("OwO Bot Dashboard")
-        self.root.geometry("710x595")
-        self.root.minsize(660, 520)
+        self.root.geometry("730x600")
+        self.root.minsize(680, 520)
         self.root.configure(bg=COLOR_BG_ROOT)
 
         # Variables
@@ -167,6 +168,7 @@ class OwOBotGUI:
         self.loop_2_enable_var = tk.BooleanVar(value=True)
         self.loop_3_enable_var = tk.BooleanVar(value=True)
         self.typing_var = tk.BooleanVar(value=True)
+        self.auto_gems_var = tk.BooleanVar(value=True)
         self.current_tab = 1
         self._suppress_tab_save = False
 
@@ -216,12 +218,15 @@ class OwOBotGUI:
         self.show_token_cb = DiscordCheckbox(token_row, text="Show", variable=self.show_token_var, command=self.toggle_token_visibility)
         self.show_token_cb.pack(side=tk.RIGHT)
 
-        # Row 2: Human Typing Toggle
-        typing_row = tk.Frame(self.config_frame, bg=COLOR_BG_ROOT)
-        typing_row.pack(fill=tk.X, pady=(0, 8))
+        # Row 2: Options (Human Typing & Auto-Gems)
+        options_row = tk.Frame(self.config_frame, bg=COLOR_BG_ROOT)
+        options_row.pack(fill=tk.X, pady=(0, 8))
 
-        self.typing_cb = DiscordCheckbox(typing_row, text="Simulate typing status ('User is typing...')", variable=self.typing_var)
-        self.typing_cb.pack(side=tk.LEFT)
+        self.typing_cb = DiscordCheckbox(options_row, text="Simulate typing status ('User is typing...')", variable=self.typing_var)
+        self.typing_cb.pack(side=tk.LEFT, padx=(0, 16))
+
+        self.auto_gems_cb = DiscordCheckbox(options_row, text="Auto-use gems on bot alerts ('time to use gems!')", variable=self.auto_gems_var)
+        self.auto_gems_cb.pack(side=tk.LEFT)
 
         # ==========================================
         # 3. Discord Tab Bar
@@ -300,6 +305,7 @@ class OwOBotGUI:
         self.log_area.tag_configure("typing", foreground=COLOR_TAG_TYPING)
         self.log_area.tag_configure("wait", foreground=COLOR_TAG_WAIT)
         self.log_area.tag_configure("chat", foreground=COLOR_TAG_CHAT)
+        self.log_area.tag_configure("gem", foreground=COLOR_TAG_GEM)
         self.log_area.tag_configure("alert", foreground=COLOR_TAG_ALERT)
         self.log_area.tag_configure("default", foreground=COLOR_TAG_DEFAULT)
 
@@ -327,6 +333,7 @@ class OwOBotGUI:
                 self.channel_var_2.set(str(conf.get("owo_channel_2", "")) or ch1)
                 self.channel_var_3.set(str(conf.get("owo_channel_3", "")) or ch1)
                 self.typing_var.set(bool(conf.get("simulate_typing", True)))
+                self.auto_gems_var.set(bool(conf.get("auto_use_gems", True)))
                 self.loop_1_enable_var.set(bool(conf.get("loop_1_enabled", True)))
                 self.loop_2_enable_var.set(bool(conf.get("loop_2_enabled", True)))
                 self.loop_3_enable_var.set(bool(conf.get("loop_3_enabled", True)))
@@ -423,6 +430,8 @@ class OwOBotGUI:
             tag = "wait"
         elif "[chat" in msg_lower:
             tag = "chat"
+        elif "[auto-gem]" in msg_lower or "used gems" in msg_lower:
+            tag = "gem"
         elif "[error]" in msg_lower or "alert" in msg_lower or "captcha" in msg_lower:
             tag = "alert"
 
@@ -489,6 +498,7 @@ class OwOBotGUI:
                 conf["owo_script_2"] = self.script_data_2
                 conf["owo_script_3"] = self.script_data_3
                 conf["simulate_typing"] = self.typing_var.get()
+                conf["auto_use_gems"] = self.auto_gems_var.get()
                 conf["loop_1_enabled"] = en1
                 conf["loop_2_enabled"] = en2
                 conf["loop_3_enabled"] = en3
